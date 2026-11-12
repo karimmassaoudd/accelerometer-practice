@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Accelerometer Practice</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 24px;
+      background: #ffffff;
+      color: #000000;
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    h1 { margin-top: 0; }
+
+    .values {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .value-box {
+      border: 1px solid #000000;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .axis {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .number { font-size: 1.4rem; }
+
+    button {
+      padding: 10px 14px;
+      margin-right: 8px;
+      background: #ffffff;
+      color: #000000;
+      border: 1px solid #000000;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    button:disabled { cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Accelerometer Practice</h1>
+    <p id="status" role="status">Press Start sensor to begin.</p>
+
+    <section class="values" aria-label="Acceleration values">
+      <div class="value-box"><span class="axis">X</span><span id="x-value" class="number">-- m/s²</span></div>
+      <div class="value-box"><span class="axis">Y</span><span id="y-value" class="number">-- m/s²</span></div>
+      <div class="value-box"><span class="axis">Z</span><span id="z-value" class="number">-- m/s²</span></div>
+    </section>
+
+    <button id="start-button" type="button">Start sensor</button>
+    <button id="stop-button" type="button" disabled>Stop sensor</button>
+  </main>
+
+  <script>
+    const status = document.getElementById("status");
+    const startButton = document.getElementById("start-button");
+    const stopButton = document.getElementById("stop-button");
+    const xValue = document.getElementById("x-value");
+    const yValue = document.getElementById("y-value");
+    const zValue = document.getElementById("z-value");
+
+    function showValue(element, value) {
+      if (typeof value !== "number") {
+        element.textContent = "-- m/s²";
+        return;
+      }
+
+      element.textContent = `${value.toFixed(2)} m/s²`;
+    }
+
+    function handleMotion(event) {
+      const acceleration = event.accelerationIncludingGravity;
+
+      if (!acceleration) {
+        status.textContent = "Acceleration data is unavailable on this device or browser.";
+        return;
+      }
+
+      showValue(xValue, acceleration.x);
+      showValue(yValue, acceleration.y);
+      showValue(zValue, acceleration.z);
+    }
+
+    async function startSensor() {
+      if (!("DeviceMotionEvent" in window)) {
+        status.textContent = "This browser does not support the Device Motion API.";
+        return;
+      }
+
+      // Some browsers require a permission request after a user taps a button.
+      if (typeof DeviceMotionEvent.requestPermission === "function") {
+        try {
+          const permission = await DeviceMotionEvent.requestPermission();
+          if (permission !== "granted") {
+            status.textContent = "Motion permission was not granted.";
+            return;
+          }
+        } catch (error) {
+          status.textContent = "Motion permission could not be requested.";
+          return;
+        }
+      }
+
+      window.addEventListener("devicemotion", handleMotion);
+      status.textContent = "Sensor is running. Move or tilt your phone.";
+      startButton.disabled = true;
+      stopButton.disabled = false;
+    }
+
+    function stopSensor() {
+      window.removeEventListener("devicemotion", handleMotion);
+      status.textContent = "Sensor stopped.";
+      startButton.disabled = false;
+      stopButton.disabled = true;
+    }
+
+    startButton.addEventListener("click", startSensor);
+    stopButton.addEventListener("click", stopSensor);
+  </script>
+</body>
+</html>
